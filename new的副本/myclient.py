@@ -1,7 +1,5 @@
 """ (Suggest open this file in the VScode and Sublime to get a good reading experience)
 
-
-
 # How to run this system???
 Prepare:
 A folder having myserver.py, myclient.py and ex2utils.py was opened in the terminal
@@ -42,26 +40,43 @@ If you close them all, the server will show the number of correct active clients
 
 
 
-# How to test the functionality and stability of this system???
+# How to test the stability and functionality of this system???
 
-1. For the name exists:
-Two clients were created with the same name like "Robert", no matter which terminal input the operation number firstly, this terminal would be registered as "Robert"
-Another would get the hint after input the message and try to input the message again, if input "Ned", then it was OK
-The server will show the number of the client numbers BUT it will also provide hint WHEN the name was registered successfully
+
+## Stability:
+### server:
+To test the single point of failure, when two terminals were opened and running: one for server and one for client, the user could type any message in the server terminal 
+and then click the "Enter(Return)" or other string keys on the keyboard but without any effect (except control+C). And the client could also run and used as usual with the operation 1, 2, 3 or 4, 
+since there was no pipeline to input words in the server terminal
+### client:
+In the client terminal, the user would be asked to input data step by step: name, operation number, message (if possible) and the name to private chat (if possible)
+For the "name", "message" and "the name to private chat", all strings were accepted, since they would not affect the principle of server interpretation
+For the operation number, the simple check would be set in the client terminal and control the input, which would be sent to the server, within the [1, 4]
+and return the hint in the client terminal if receiving a wrong number or strings.
+Besides, the message, which would be sent to the server, was created in the client with the special symbols "$_$_$_!@#" to concatenate them 
+this symbol could be more difficult and complex using Hash function adding the number and the string,
+and the server would interpret the command using this symbol. The only way to destory this system was using BF to get this secret key.
+However, if the destructive message with this symbol was sent to the server like name "$_$_$_!@#", there was a "try-except" pair in the server to catch errors of the interpretation and close the connection to this client terminal immediately.
+(similar principles on the communication content and the name for the private chat, the name information in the server would also be deleted if the user firstly registered the name)
+
+
+## Functionality:
+1. For the name already exists:
+Two clients were created with the same name like "Robert", no matter which terminal input the operation number firstly, this terminal would be registered as the unique "Robert"
+Another would get the hint after input, until the former "Robert" exited (disconnected) to the server, since the name in the dictionary would be deleted
+The server will show the number of the client numbers correctly AND it will also provide hint WHEN the name was registered successfully
 
 2. For the uncorrect operation number(Becasue the input order was fixed and designed, only the content was considered especially the operation number):
 One client was registered with any name and input the any number or string except 1, 2, 3 or 4, the hint would be returned and user need to try again
 
 3. For the private chat:
-One client was registered with any name and input 3 with any content, then input a new name, which is not registered, it will return the hint that "Sorry, this user name has not been registered, please check and try again"
+One client was registered with any name and input 3 with any content, then input a new name, which had not been registered, it will return the hint that "Sorry, this user name has not been registered, please check and try again"
 
 4. For the disconnect:
 One client was registered with "Robert" and input 1 to finish the register
-One client was registered with "Ned" and input 1 to finsh and check the list (now there should be two items: Robert and Ned)
+One client was registered with "Ned" and input 1 to finsh the register and checked the list (now there should be two items: Robert and Ned)
 If a new client was created still using name "Robert" with operation number 4, the hint will return "This name is already exists"
-And input 1 in the "Ned" terminal AGAIN, the Robert client was still there making no difference
-
-
+AGAIN: in the "Ned" terminal, input the operation number 1, the Robert client was still there making no difference and the "Robert" terminal could work as usual
 
 """
 
@@ -81,7 +96,12 @@ class IRCClient(Client):
         elif message == str("#_ALREADY_EXIST_COMMAND_#").encode():
             self.name = input("This name is already registered, please try another one: \n")
             return True
-
+        
+        elif message == str("#_Malicious_ATTACK_DETECTED_#").encode():
+            print("Malicious attack detected...Closing the client...Please register again...")
+            os._exit(0)
+            return False
+        
         else:
             print(message)  # message on the client
             return True
